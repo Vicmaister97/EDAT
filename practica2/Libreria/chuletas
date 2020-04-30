@@ -1,0 +1,290 @@
+COPY isbns_precios from '/home/alumnos/e336673/Desktop/isbns_precios.txt' WITH DELIMITER '	' ENCODING 'ISO-8859-1'
+
+CREATE TABLE aplica
+(
+  of_id integer NOT NULL,
+  isbn character varying(30) NOT NULL,
+  CONSTRAINT aplica_pkey PRIMARY KEY (of_id, isbn),
+  CONSTRAINT aplica_isbn_fkey FOREIGN KEY (isbn)
+      REFERENCES edicion (isbn) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT aplica_of_id_fkey FOREIGN KEY (of_id)
+      REFERENCES oferta (of_id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE aplica
+  OWNER TO alumnodb;
+
+
+
+
+
+CREATE TABLE autor
+(
+  nombre character varying NOT NULL,
+  autor_id integer NOT NULL,
+  CONSTRAINT autor_pkey PRIMARY KEY (autor_id)
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE autor
+  OWNER TO alumnodb;
+
+
+
+
+
+CREATE TABLE cliente
+(
+  cl_id integer NOT NULL,
+  tarjeta integer,
+  scrname character varying,
+  full_name character varying,
+  join_date character varying,
+  expiration date,
+  CONSTRAINT cliente_pkey PRIMARY KEY (cl_id)
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE cliente
+  OWNER TO alumnodb;
+
+
+
+
+CREATE TABLE edicion
+(
+  idioma character varying,
+  editor character varying,
+  precio double precision,
+  libro_id integer,
+  isbn character varying(30) NOT NULL,
+  bolsillo boolean,
+  numero_de_paginas character varying,
+  fecha_de_publicacion date,
+  CONSTRAINT edicion_pkey PRIMARY KEY (isbn)
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE edicion
+  OWNER TO alumnodb;
+
+
+
+CREATE TABLE escribe
+(
+  autor_id integer NOT NULL,
+  libro_id integer NOT NULL,
+  CONSTRAINT escribe_pkey PRIMARY KEY (autor_id, libro_id),
+  CONSTRAINT escribe_autor_fkey FOREIGN KEY (autor_id)
+      REFERENCES autor (autor_id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT escribe_titulo_fkey FOREIGN KEY (libro_id)
+      REFERENCES libro (libro_id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE escribe
+  OWNER TO alumnodb;
+
+
+
+CREATE TABLE libro
+(
+  titulo character varying NOT NULL,
+  libro_id integer NOT NULL,
+  CONSTRAINT libro_pkey PRIMARY KEY (libro_id)
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE libro
+  OWNER TO alumnodb;
+
+
+
+CREATE TABLE oferta
+(
+  descuento double precision,
+  of_id integer NOT NULL,
+  fecha_inicio date,
+  fecha_final date,
+  CONSTRAINT oferta_pkey PRIMARY KEY (of_id)
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE oferta
+  OWNER TO alumnodb;
+
+
+
+CREATE TABLE vende
+(
+  venta_id integer NOT NULL,
+  copias integer,
+  isbn character varying(30) NOT NULL,
+  CONSTRAINT vende_pkey PRIMARY KEY (venta_id, isbn),
+  CONSTRAINT vende_isbn_fkey FOREIGN KEY (isbn)
+      REFERENCES edicion (isbn) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT vende_venta_id_fkey FOREIGN KEY (venta_id)
+      REFERENCES venta (venta_id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE vende
+  OWNER TO alumnodb;
+
+
+
+
+
+CREATE TABLE venta
+(
+  venta_id integer NOT NULL,
+  importe double precision,
+  fecha date,
+  cl_id integer,
+  CONSTRAINT venta_pkey PRIMARY KEY (venta_id),
+  CONSTRAINT venta_cliente_fkey FOREIGN KEY (cl_id)
+      REFERENCES cliente (cl_id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE venta
+  OWNER TO alumnodb;
+
+
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+
+
+CREATE TABLE libros_final
+(
+  autor character varying,
+  titulo character varying,
+  formato character varying,
+  numero_de_paginas character varying,
+  editorial character varying,
+  fecha_de_publicacion date,
+  idioma character varying,
+  isbn character varying NOT NULL
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE libros_final
+  OWNER TO alumnodb;
+
+
+
+
+
+CREATE TABLE isbn_precios
+(
+  isbn character varying(30) NOT NULL,
+  precio character varying
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE isbn_precios
+  OWNER TO alumnodb;
+
+
+
+
+
+CREATE TABLE usuarios
+(
+  uid integer NOT NULL,
+  scrname character varying,
+  full_name character varying,
+  join_date character varying,
+  ccard character varying,
+  expiration date
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE usuarios
+  OWNER TO alumnodb;
+
+
+
+
+
+CREATE TABLE ventas
+(
+  "order" integer NOT NULL,
+  uid integer,
+  isbn character varying NOT NULL,
+  fecha date
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE ventas
+  OWNER TO alumnodb;
+
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+
+INSERT INTO venta	
+SELECT  "order", min(fecha), min(uid)
+FROM ventas
+GROUP BY "order"
+
+
+
+insert into precios2
+select isbn, cast(precio as double precision)
+from isbn_precios
+
+
+
+
+insert into edicion
+select A1.idm, A1.edt, A2.precio, A1.isbn, A1.fmt, npg, cast(A1.pbd as date), A1.ttl
+from	((select ttl, fmt, cast(substring(npg from ' #"%#" %' for '#') as integer) as npg, edt, cast(pbd as date), idm, isbn
+	from (select min(titulo) as ttl, min(formato) as fmt, min(numero_de_paginas) as npg, min(editorial) as edt, min(fecha_de_publicacion) as pbd, min(idioma) as idm, isbn
+	from libros_final
+	group by isbn) as T1
+	where T1.npg similar to '%(0|1|2|3|4|5|6|7|8|9)%')
+	union
+	(select ttl, fmt, 0 as npg, edt, cast(pbd as date), idm, isbn
+	from (select min(titulo) as ttl, min(formato) as fmt, min(numero_de_paginas) as npg, min(editorial) as edt, min(fecha_de_publicacion) as pbd, min(idioma) as idm, isbn
+	from libros_final
+	group by isbn) as T1
+	where not(T1.npg similar to '%(0|1|2|3|4|5|6|7|8|9)%'))) as A1, precios2 as A2
+where A1.isbn = A2.isbn
+
+
+
+
+
+
+
+
+insert into escribe
+select autor, titulo
+from libros_final
+
+
+
+
+insert into vende
+select v."order", v.isbn, e.precio
+from ventas as v, edicion as e
+where e.isbn = v.isbn

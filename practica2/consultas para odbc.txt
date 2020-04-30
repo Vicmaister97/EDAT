@@ -1,0 +1,87 @@
+usuario +:
+
+Comprobar que no esté cogido el nombre.
+
+select	cl_id
+from 	cliente
+where 	scrname = <screen name>
+
+
+Mirar el máximo id que existe
+
+select 	max(cl_id)
+from 	cliente
+
+
+Insertar el nuevo cliente
+
+insert into cliente values (<max id> + 1, <screen name>, <full name>, <ccard>, FALSE)
+(?) No sé si esta es correcta
+
+----------------------------------------------------------------------------------------------
+usuario -:
+
+Modificar la columna borrado a TRUE
+
+update cliente set borrado = TRUE where scrname = <screen name>
+
+----------------------------------------------------------------------------------------------
+oferta:
+
+Mirar el máximo id que existe
+
+select 	max(of_id)
+from 	oferta
+
+
+Crear oferta
+
+insert into oferta values (<max id> + 1, <fecha inicio>, <fecha final>, <descuento>)
+
+
+Relacionar la oferta con las ediciones (Esta instrucción estará dentro de un bucle)
+
+insert into aplica values (<max id) + 1, <isbn[i]>)
+
+----------------------------------------------------------------------------------------------
+compra:
+
+Mirar el máximo id que existe
+
+select 	max(venta_id)
+from 	venta
+
+
+Crear venta
+
+insert into venta 
+select 	<max id> + 1, <fecha actual>, cl_id
+from 	cliente
+where 	scr_name = <scr_name>
+
+
+Ver si hay ofertas activas asociadas a los isbn, y calcular el importe de cada uno.
+(Los isbn sin ofertas, están asociados a una oferta "eterna" de 0 descuento)
+
+select 	exp(sum(log(abs(1 - o.descuento / 100)))) * e.precio
+from 	edicion as e, aplica as a, oferta as o
+where 	a.isbn = <isbn[i]>		and
+	e.isbn = a.isbn			and
+	o.of_id = a.of_id		and
+	o.fecha_ini <= <fecha actual>	and
+	<fecha actual> <= o.fecha_fin
+
+
+Asociar la venta a las ediciones vendidas
+
+insert into vende values (<isbn[i]>, <max id> + 1, <importe[i]>)
+
+----------------------------------------------------------------------------------------------
+best_seller:
+
+select 		titulo
+from 		(select	count (v.isbn) as sells, e.titulo
+		 from	edicion as e, vende as v
+		 where	e.titulo = <titulo>	and
+			v.isbn = e.isbn)
+order by 	sells
